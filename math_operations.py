@@ -1,9 +1,21 @@
 from pydantic import BaseModel, validator, ValidationError
-from time import sleep
+from typing import Optional
+import pandas as pd
+from abc import ABC, abstractmethod
+from collections import Counter
+
 
 class UserDataValidator(BaseModel):
     name: str
     age: int
+    time_created: int
+    gender: Optional[str]
+    last_name: Optional[str]
+    ip: Optional[str]
+    city: Optional[str]
+    premium: Optional[bool]
+    birth_day: Optional[str]
+    balance: Optional[float]
 
     @validator('name')
     def user_name_validator(cls, obj):
@@ -17,40 +29,61 @@ class UserDataValidator(BaseModel):
             raise ValidationError
         return obj
 
-class BaseUserData:
+
+class UserDataFilter(ABC):
+    """Class implements methods to validate recieved data """
     def __init__(self, data: list, validator_class=UserDataValidator):
         self._validator_class = validator_class
         self._data = data
-        self._validated_data = []
-        self._result = None
+
+    def __call__(self, *args, **kwargs):
+        validated_data = self._validate_data()
+        if not validated_data:
+            return {'Message': 'No records.'}
+        return self._count_result(validated_data, *args)
+
+    @abstractmethod
+    def _count_result(self, data, *args):
+        return
 
     def _validate_data(self):
+        validated_data = []
         for rec in self._data:
             try:
                 temp = self._validator_class.parse_obj(rec)
             except ValidationError as e:
                 pass
             else:
-                self._validated_data.append(temp)
+                validated_data.append(dict(temp))
 
-        return self._validated_data
+        return validated_data
 
 
-class MedianCalculator(BaseUserData):
+class MedianCalculator(UserDataFilter):
+    """Class for counting median by 'age' field of data"""
+    def _count_result(self, data, *args):
+        df = pd.DataFrame(data)
+        return df['age'].median()
 
-    def __call__(self, *args, **kwargs):
-        sleep(3)
-        return self._validate_data()
 
-class AgeRangeCalculator(BaseUserData):
+class AgeRangeCalculator(UserDataFilter):
+    """Class for filtering user by age range"""
+    def _count_result(self, data, *args):
+        age_from, age_to = args
 
-    def __call__(self, *args, **kwargs):
-        sleep(3)
-        return self._validate_data()
+        if age_from <= 0 or age_to <= 0:
+            return {"Mistake": "Age must be above zero"}
+        if age_from > age_to:
+            return {"Mistake": "age_from must be less or equal age_to"}
 
-class UniqueNamesCalculator(BaseUserData):
+        result = []
+        for rec in data:
+            if age_from <= rec['age'] <= age_to:
+                result.append(rec)
+        return result
 
-    def __call__(self, *args, **kwargs):
-        sleep(3)
-        return self._validate_data()
-
+class UniqueNamesCalculator(UserDataFilter):
+    """Class for counting unuque names of users"""
+    def _count_result(self, data, *args):
+        df = pd.DataFrame(data)
+        return Counter(df['name'])
