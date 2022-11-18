@@ -4,7 +4,7 @@ Server provides API to get data from another server and make math operations on 
 count amount of unique users names, filter users records by age range. Endpoints for this functional:
 - **/median**
 - **/unique_names_histogram**
-- **/age_range?frm=<int>&to=<int>** - query parameter ***frm** - left border of age range, ***to*** right border.
+- **/age_range?frm={int}&to={int}** - query parameter ***frm** - left border of age range, ***to*** right border.
 
 All requirements of project in **requirements.txt**. To launch servers locally:
 1. Clone repo 
