@@ -1,5 +1,6 @@
-data.jsonl
+urls_for_test.txt
 task.txt
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
